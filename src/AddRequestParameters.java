@@ -5,8 +5,11 @@ import com.eviware.soapui.impl.rest.RestMethod;
 import com.eviware.soapui.impl.rest.RestRequest;
 import com.eviware.soapui.impl.rest.RestResource;
 import com.eviware.soapui.impl.rest.RestService;
+import com.eviware.soapui.impl.rest.support.RestParamsPropertyHolder;
+import com.eviware.soapui.impl.support.AbstractInterface;
 import com.eviware.soapui.impl.wsdl.WsdlOperation;
 import com.eviware.soapui.impl.wsdl.WsdlProject;
+import com.eviware.soapui.impl.wsdl.WsdlRequest;
 import com.eviware.soapui.model.ModelItem;
 import com.eviware.soapui.model.iface.Interface;
 import com.eviware.soapui.model.iface.MessagePart;
@@ -101,6 +104,39 @@ public class AddRequestParameters extends AbstractSoapUIAction
         requestPanel.setLayout(new BoxLayout(requestPanel, BoxLayout.Y_AXIS));
 
 
+        ///TEST
+        final JLabel nameLabel = new JLabel();
+        final JLabel valueLabel = new JLabel();
+
+
+        WsdlProject testProject = (WsdlProject) workspace.getProjectAt(0);
+
+        AbstractInterface inter = testProject.getInterfaceAt(0);
+
+        Operation[] opers = inter.getAllOperations();
+
+        RestResource req = (RestResource) opers[0];
+
+        String params = req.getPropertyValue("TEST NAME");
+
+        nameLabel.setText("REQUEST NAME - " + req.getName());
+        valueLabel.setText("REQUEST PROP VALUE - " + params);
+
+        newPanel.add(nameLabel);
+        newPanel.add(valueLabel);
+
+        String[] props = req.getPropertyNames();
+
+        for (String proper: props) {
+            final JLabel propLabel = new JLabel();
+            propLabel.setText("PROP - " + proper);
+
+            newPanel.add(propLabel);
+
+        }
+
+        ///TEST
+
         ///Label SETTINGS
         final JLabel serviceLabel = new JLabel();
         newPanel.add(serviceLabel);
@@ -131,24 +167,13 @@ public class AddRequestParameters extends AbstractSoapUIAction
 
         serviceLabel.setText(selectedIFace.getIFaceName());
 
-        Iterator<Operation> i = selectedIFace.getIFace().getOperationList().iterator();
-
+        List <Operation> operations = selectedIFace.getIFace().getOperationList();
 
         String[] endpoints = selectedIFace.getIFace().getEndpoints();
 
-        WsdlOperation operation;
-
-        while (i.hasNext()) {
-            operation = (WsdlOperation) i.next();
-
-            List<Request> requests = operation.getRequestList();
-
-            if (requests != null) {
-                for (Request request : requests) {
-                    JLabel operationLabel = new JLabel("Operation - " + operation.getName() + ": " + request.getName());
-                    operationsPanel.add(operationLabel);
-                }
-            }
+        for (Operation operation: operations) {
+            JLabel operationLabel = new JLabel("WSDL OPERATION - " + operation.getName());
+            operationsPanel.add(operationLabel);
         }
 
         if (endpoints != null) {
@@ -199,17 +224,6 @@ public class AddRequestParameters extends AbstractSoapUIAction
                             for (Request request : requests) {
                                 JLabel operationLabel = new JLabel("Operation - " + operation.getName() + ": " + request.getName());
                                 operationsPanel.add(operationLabel);
-
-                                MessagePart[] messageParts = request.getRequestParts();
-
-                                if (messageParts != null) {
-                                    for (MessagePart messagePart : messageParts) {
-                                        JLabel messageLabel = new JLabel("Message part type - " + messagePart.getPartType() +
-                                                " Name " + messagePart.getName() +
-                                                "TO STRING" + messagePart.toString());
-                                        operationsPanel.add(messageLabel);
-                                    }
-                                }
                             }
                         }
                     }
