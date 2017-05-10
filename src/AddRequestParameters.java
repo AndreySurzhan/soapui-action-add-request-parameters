@@ -28,15 +28,16 @@ public class AddRequestParameters extends AbstractSoapUIAction
 {
     public AddRequestParameters()
     {
-        super( "Add Auth Properties", "Add Auth Properties to test cases" );
+        super( "Add Request Parameters", "Add specified parameters to selected requests" );
     }
 
     public void perform(ModelItem target, Object param )
     {
         ///Define GUI
-        final JDialog newDialog = new JDialog();
-        final JPanel newPanel = new JPanel();
+        final JDialog jDialog = new JDialog();
+        final JPanel globalPanel = new JPanel();
         final JPanel requestCheckBoxesPanel = new JPanel();
+        final JScrollPane requestCheckBoxesScrollPane = new JScrollPane(requestCheckBoxesPanel);
         final JPanel comBoxesPanel = new JPanel();
 
         final JComboBox projectComboBox = new JComboBox();
@@ -64,7 +65,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
             projectComboBox.addItem(new Proj(proj));
         }
 
-        projectComboBox.setSelectedIndex(3);
+        projectComboBox.setSelectedIndex(0);
 
         Proj selectedProject = (Proj) projectComboBox.getSelectedItem();
         setServiceComBoxGUI(serviceComboBox, selectedProject);
@@ -103,7 +104,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                newDialog.dispose();
+                jDialog.dispose();
             }
         });
 
@@ -155,12 +156,16 @@ public class AddRequestParameters extends AbstractSoapUIAction
         });
 
         ///LAYOUT SETTINGS
-        newDialog.setSize(400, 400);
+        jDialog.setSize(800, 600);
 
-        newPanel.setLayout(new BoxLayout(newPanel, BoxLayout.Y_AXIS));
+        globalPanel.setLayout(new BoxLayout(globalPanel, BoxLayout.Y_AXIS));
         comBoxesPanel.setLayout(new BoxLayout(comBoxesPanel, BoxLayout.Y_AXIS));
         requestCheckBoxesPanel.setLayout(new BoxLayout(requestCheckBoxesPanel, BoxLayout.Y_AXIS));
         requestParamsPanel.setLayout(new BoxLayout(requestParamsPanel, BoxLayout.Y_AXIS));
+
+        //Scroll panel settings from list of request checkboxes
+        requestCheckBoxesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        requestCheckBoxesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         okCancelButtonsPanel.add(okButton);
         okCancelButtonsPanel.add(cancelButton);
@@ -170,14 +175,14 @@ public class AddRequestParameters extends AbstractSoapUIAction
 
         requestParamsPanel.add(buildRequestParamPanelGUI(addRequestParamButton, requestParamGUI));
 
-        newPanel.add(comBoxesPanel);
-        newPanel.add(requestCheckBoxesPanel);
-        newPanel.add(requestParamsPanel);
-        newPanel.add(okCancelButtonsPanel);
+        globalPanel.add(comBoxesPanel);
+        globalPanel.add(requestCheckBoxesScrollPane);
+        globalPanel.add(requestParamsPanel);
+        globalPanel.add(okCancelButtonsPanel);
 
-        newDialog.add(newPanel);
+        jDialog.add(globalPanel);
 
-        UISupport.showDialog(newDialog);
+        UISupport.showDialog(jDialog);
     }
 
     ///PRIVATE FUNCTIONS
