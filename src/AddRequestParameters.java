@@ -3,6 +3,7 @@ package src;
 import com.eviware.soapui.SoapUI;
 import com.eviware.soapui.impl.rest.RestRequest;
 import com.eviware.soapui.impl.rest.RestResource;
+import com.eviware.soapui.impl.rest.support.RestParamProperty;
 import com.eviware.soapui.impl.rest.support.RestParamsPropertyHolder;
 import com.eviware.soapui.impl.support.AbstractInterface;
 import com.eviware.soapui.impl.wsdl.WsdlProject;
@@ -42,7 +43,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
         final JComboBox serviceComboBox = new JComboBox();
 
         final JPanel requestParamsPanel = new JPanel(new FlowLayout());
-        final JButton addRequestParamButton = addRequestParamButtonGUI();
+        final JButton addRequestParamButton = buildAddRequestParamInputsButtonGUI();
 
         final JPanel okCancelButtonsPanel = new JPanel(new FlowLayout());
         final JButton okButton = new JButton("OK");
@@ -51,13 +52,18 @@ public class AddRequestParameters extends AbstractSoapUIAction
         final Workspace workspace = SoapUI.getWorkspace();
         List<? extends Project> projects = workspace.getProjectList();
         final List<RequestCheckBox> requestCheckBoxes = new ArrayList<RequestCheckBox>();
+        final List<RequestParamGUI> requestParamGUIList = new ArrayList<RequestParamGUI>();
 
+        RequestParamGUI requestParamGUI = new RequestParamGUI();
+
+        requestParamGUIList.add(requestParamGUI);
 
         for (Project project : projects) {
             WsdlProject proj;
             proj = (WsdlProject) project;
             projectComboBox.addItem(new Proj(proj));
         }
+
         projectComboBox.setSelectedIndex(3);
 
         Proj selectedProject = (Proj) projectComboBox.getSelectedItem();
@@ -66,24 +72,31 @@ public class AddRequestParameters extends AbstractSoapUIAction
         IFace selectedIFace = (IFace) serviceComboBox.getSelectedItem();
         setRequestsCheckBoxListGUI(requestCheckBoxesPanel, selectedIFace, requestCheckBoxes);
 
-//        final RestResource req = (RestResource) operations[0];
-//
-//        final RestParamsPropertyHolder params = req.getParams();
-//
+        ///ACTION LISTENERS
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                for (RequestCheckBox requestCheckBox : requestCheckBoxes) {
-                    if (requestCheckBox.getCheckBox().isSelected()) {
-                        JLabel isSelectedLabel = new JLabel();
-                        isSelectedLabel.setText("=====SELECTED: " + requestCheckBox.getRestRequest().getName());
-                        requestCheckBoxesPanel.add(isSelectedLabel);
-                        requestCheckBoxesPanel.revalidate();
-                    }
+                if (requestCheckBoxes.size() == 0) {
+                    return;
                 }
 
-//                RestParamProperty newParamProp = params.addProperty("NEW Plugin Param Prop");
-//                newParamProp.setDefaultValue(new String("Plugin VALUE"));
-//                newParamProp.setStyle(RestParamsPropertyHolder.ParameterStyle.TEMPLATE);
+                for (RequestCheckBox requestCheckBox : requestCheckBoxes) {
+                    if (!requestCheckBox.getCheckBox().isSelected()) {
+                        continue;
+                    }
+
+                    for (RequestParamGUI paramGUI : requestParamGUIList) {
+                        if (paramGUI.requestParamNameTextField.getText().isEmpty()) {
+                            continue;
+                        }
+
+                        RestParamsPropertyHolder param = requestCheckBox.getRestRequest().getParams();
+                        RestParamProperty newParamProp = param.addProperty(
+                                paramGUI.requestParamNameTextField.getText());
+                        newParamProp.setValue(paramGUI.requestParamValueTextField.getText());
+                        newParamProp.setStyle((RestParamsPropertyHolder.ParameterStyle)
+                                paramGUI.requestParamStyleComboBox.getSelectedItem());
+                    }
+                }
             }
         } );
 
@@ -96,10 +109,13 @@ public class AddRequestParameters extends AbstractSoapUIAction
 
         addRequestParamButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JButton addReqParamButton = addRequestParamButtonGUI();
+                JButton addReqParamButton = buildAddRequestParamInputsButtonGUI();
+                RequestParamGUI requestParamGUI = new RequestParamGUI();
+
+                requestParamGUIList.add(requestParamGUI);
                 addReqParamButton.addActionListener(this);
 
-                requestParamsPanel.add(newRequestParamPanelGUI(addReqParamButton));
+                requestParamsPanel.add(buildRequestParamPanelGUI(addReqParamButton, requestParamGUI));
                 requestParamsPanel.revalidate();
             }
         });
@@ -121,20 +137,24 @@ public class AddRequestParameters extends AbstractSoapUIAction
             @Override
             public void actionPerformed(ActionEvent event) {
                 JComboBox<IFace> serviceComboBox = (JComboBox<IFace>) event.getSource();
+
                 requestCheckBoxes.clear();
                 requestCheckBoxesPanel.removeAll();
 
-                if (serviceComboBox.getItemCount() != 0) {
-                    IFace selectedIFace = (IFace) serviceComboBox.getSelectedItem();
-                    setRequestsCheckBoxListGUI(requestCheckBoxesPanel, selectedIFace, requestCheckBoxes);
+                if (serviceComboBox.getItemCount() == 0) {
+                    requestCheckBoxesPanel.revalidate();
+
+                    return;
                 }
+
+                IFace selectedIFace = (IFace) serviceComboBox.getSelectedItem();
+                setRequestsCheckBoxListGUI(requestCheckBoxesPanel, selectedIFace, requestCheckBoxes);
 
                 requestCheckBoxesPanel.revalidate();
             }
         });
 
-
-        ///Layout settings
+        ///LAYOUT SETTINGS
         newDialog.setSize(400, 400);
 
         newPanel.setLayout(new BoxLayout(newPanel, BoxLayout.Y_AXIS));
@@ -148,7 +168,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
         comBoxesPanel.add(projectComboBox);
         comBoxesPanel.add(serviceComboBox);
 
-        requestParamsPanel.add(newRequestParamPanelGUI(addRequestParamButton));
+        requestParamsPanel.add(buildRequestParamPanelGUI(addRequestParamButton, requestParamGUI));
 
         newPanel.add(comBoxesPanel);
         newPanel.add(requestCheckBoxesPanel);
@@ -160,66 +180,67 @@ public class AddRequestParameters extends AbstractSoapUIAction
         UISupport.showDialog(newDialog);
     }
 
+    ///PRIVATE FUNCTIONS
     private void setServiceComBoxGUI(JComboBox serviceComboBox, Proj project) {
-
         //Clean combox content
         serviceComboBox.setModel(new DefaultComboBoxModel());
         List<Interface> iFaces = project.getProject().getInterfaceList();
 
-        if (!iFaces.isEmpty()) {
-            for (Interface iFace : iFaces) {
-                AbstractInterface inter;
-                inter = (AbstractInterface) iFace;
-                serviceComboBox.addItem(new IFace(inter));
-            }
-
-            serviceComboBox.setSelectedIndex(0);
+        if (iFaces.size() == 0) {
+            return;
         }
+
+        for (Interface iFace : iFaces) {
+            AbstractInterface inter;
+            inter = (AbstractInterface) iFace;
+            serviceComboBox.addItem(new IFace(inter));
+        }
+
+        serviceComboBox.setSelectedIndex(0);
     }
 
     private  void setRequestsCheckBoxListGUI(JPanel requestCheckBoxesPanel, IFace iFace, List<RequestCheckBox> requestCheckBoxes) {
         Operation[] operations = iFace.getIFace().getAllOperations();
 
-        if (operations != null) {
-            for (Operation operation: operations) {
-                RestResource op;
-                op = (RestResource) operation;
-                List<Request> reqs = op.getRequestList();
+        if (operations == null) {
+            requestCheckBoxesPanel.revalidate();
 
-                for (Request req : reqs) {
-                    RestRequest request;
-                    request = (RestRequest) req;
+            return;
+        }
 
-                    //Show list of checkboxes
-                    JCheckBox reqCheckbox = new JCheckBox("Resource: '" + op.getName() + "' Request: '" + request.getName() + "'");
-                    RequestCheckBox requestCheckBox = new RequestCheckBox(request, reqCheckbox);
+        for (Operation operation: operations) {
+            RestResource op;
+            op = (RestResource) operation;
+            List<Request> reqs = op.getRequestList();
 
-                    requestCheckBox.getCheckBox().setSelected(false);
-                    requestCheckBoxes.add(requestCheckBox);
-                    requestCheckBoxesPanel.add(requestCheckBox.getCheckBox());
-                }
+            for (Request req : reqs) {
+                RestRequest request;
+                request = (RestRequest) req;
+
+                //Show list of checkboxes
+                JCheckBox reqCheckbox = new JCheckBox("Resource: '" + op.getName() + "' Request: '" + request.getName() + "'");
+                RequestCheckBox requestCheckBox = new RequestCheckBox(request, reqCheckbox);
+
+                requestCheckBox.getCheckBox().setSelected(false);
+                requestCheckBoxes.add(requestCheckBox);
+                requestCheckBoxesPanel.add(requestCheckBox.getCheckBox());
             }
         }
 
         requestCheckBoxesPanel.revalidate();
     }
 
-    private JPanel requestParamPanelGUI() {
+    private JPanel buildRequestParamInputsPanelGUI(RequestParamGUI requestParamGUI) {
         JPanel requestParamPanel = new JPanel(new FlowLayout());
-        JComboBox requestStyleComBox = new JComboBox();
-        JTextField requestParamNameTextField = new JTextField(10);
-        JTextField requestParamValueTextField = new JTextField(10);
-        for (RestParamsPropertyHolder.ParameterStyle requestStyle : RestParamsPropertyHolder.ParameterStyle.values()) {
-            requestStyleComBox.addItem(requestStyle);
-        }
-        requestParamPanel.add(requestParamNameTextField);
-        requestParamPanel.add(requestParamValueTextField);
-        requestParamPanel.add(requestStyleComBox);
+
+        requestParamPanel.add(requestParamGUI.requestParamNameTextField);
+        requestParamPanel.add(requestParamGUI.requestParamValueTextField);
+        requestParamPanel.add(requestParamGUI.requestParamStyleComboBox);
 
         return requestParamPanel;
     }
 
-    private JButton addRequestParamButtonGUI() {
+    private JButton buildAddRequestParamInputsButtonGUI() {
         JButton addRequestParamButton = new JButton();
         try {
             Image img = ImageIO.read(getClass().getResource("addIcon.png"));
@@ -232,9 +253,9 @@ public class AddRequestParameters extends AbstractSoapUIAction
         return addRequestParamButton;
     }
 
-    private JPanel newRequestParamPanelGUI(JButton addRequestParamButton) {
+    private JPanel buildRequestParamPanelGUI(JButton addRequestParamButton, RequestParamGUI requestParamGUI) {
         JPanel newRequestParamPanel = new JPanel();
-        newRequestParamPanel.add(requestParamPanelGUI());
+        newRequestParamPanel.add(buildRequestParamInputsPanelGUI(requestParamGUI));
         newRequestParamPanel.add(addRequestParamButton);
 
         return newRequestParamPanel;
@@ -294,33 +315,6 @@ public class AddRequestParameters extends AbstractSoapUIAction
         }
     }
 
-    class Oper {
-        private RestResource operation;
-        private String operationName;
-
-        public Oper (RestResource operation) {
-            this.operation = operation;
-            this.operationName = operation.getName();
-        }
-
-        public RestResource getOperation () {
-            return this.operation;
-        }
-
-        public String getOperationName () {
-            return this.operationName;
-        }
-
-        public String toString () {
-            return this.operationName;
-        }
-
-        public void setOperation (Oper operation) {
-            this.operation = operation.getOperation();
-            this.operationName = operation.getOperationName();
-        }
-    }
-
     class RequestCheckBox {
         private RestRequest restRequest;
         private JCheckBox requestCheckBox;
@@ -345,6 +339,31 @@ public class AddRequestParameters extends AbstractSoapUIAction
         public void setRequestCheckBox (RestRequest restRequest, JCheckBox requestCheckBox) {
             this.restRequest = restRequest;
             this.requestCheckBox = requestCheckBox;
+        }
+    }
+
+    class RequestParamGUI {
+        public JTextField requestParamNameTextField;
+        public JTextField requestParamValueTextField;
+        public JComboBox requestParamStyleComboBox;
+
+        private JComboBox buildRequestParamStyleComboBoxGUI () {
+            JComboBox requestParamStyleComboBox = new JComboBox();
+            for (RestParamsPropertyHolder.ParameterStyle requestStyle : RestParamsPropertyHolder.ParameterStyle.values()) {
+                requestParamStyleComboBox.addItem(requestStyle);
+            }
+
+            return requestParamStyleComboBox;
+        }
+
+        public RequestParamGUI () {
+            requestParamNameTextField = new JTextField(10);
+            requestParamStyleComboBox = buildRequestParamStyleComboBoxGUI();
+            requestParamValueTextField = new JTextField(10);
+        }
+
+        public RequestParamGUI getRequestParamGUI () {
+            return this;
         }
     }
 }
