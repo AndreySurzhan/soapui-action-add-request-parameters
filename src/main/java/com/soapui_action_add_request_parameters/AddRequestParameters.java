@@ -248,7 +248,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
     private JButton buildAddRequestParamInputsButtonGUI() {
         JButton addRequestParamButton = new JButton();
         try {
-            Image img = ImageIO.read(getClass().getResource("../../../images/addIcon.png"));
+            Image img = ImageIO.read(getClass().getClassLoader().getResource("images/addIcon.png"));
             img = img.getScaledInstance(20, 20, Image.SCALE_DEFAULT);
             addRequestParamButton.setIcon(new ImageIcon(img));
         } catch (Exception ex) {
