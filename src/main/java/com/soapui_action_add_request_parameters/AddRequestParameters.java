@@ -1,4 +1,4 @@
-package src;
+package com.soapui_action_add_request_parameters;
 
 import com.eviware.soapui.SoapUI;
 import com.eviware.soapui.impl.rest.RestRequest;
@@ -248,7 +248,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
     private JButton buildAddRequestParamInputsButtonGUI() {
         JButton addRequestParamButton = new JButton();
         try {
-            Image img = ImageIO.read(getClass().getResource("addIcon.png"));
+            Image img = ImageIO.read(getClass().getResource("../../../images/addIcon.png"));
             img = img.getScaledInstance(20, 20, Image.SCALE_DEFAULT);
             addRequestParamButton.setIcon(new ImageIcon(img));
         } catch (Exception ex) {
