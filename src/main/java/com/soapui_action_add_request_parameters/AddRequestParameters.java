@@ -19,6 +19,7 @@ import com.eviware.soapui.support.action.support.AbstractSoapUIAction;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,6 +41,8 @@ public class AddRequestParameters extends AbstractSoapUIAction
         final JPanel requestCheckBoxesPanel = new JPanel();
         final JScrollPane requestCheckBoxesScrollPane = new JScrollPane(requestCheckBoxesPanel);
         final JPanel comBoxesPanel = new JPanel();
+        final JPanel projectComboBoxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        final JPanel serviceComboBoxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         final JComboBox projectComboBox = new JComboBox();
         final JComboBox serviceComboBox = new JComboBox();
@@ -58,11 +61,11 @@ public class AddRequestParameters extends AbstractSoapUIAction
         final Workspace workspace = SoapUI.getWorkspace();
         List<? extends Project> projects = workspace.getProjectList();
         final List<RequestCheckBox> requestCheckBoxes = new ArrayList<RequestCheckBox>();
-        final List<RequestParamGUI> requestParamGUIList = new ArrayList<RequestParamGUI>();
+        final List<RequestParamInputsPanelGUI> requestParamInputsPanelGUIList = new ArrayList<RequestParamInputsPanelGUI>();
 
-        RequestParamGUI requestParamGUI = new RequestParamGUI();
+        RequestParamInputsPanelGUI requestParamInputsPanelGUI = new RequestParamInputsPanelGUI();
 
-        requestParamGUIList.add(requestParamGUI);
+        requestParamInputsPanelGUIList.add(requestParamInputsPanelGUI);
 
         for (Project project : projects) {
             WsdlProject proj;
@@ -90,17 +93,17 @@ public class AddRequestParameters extends AbstractSoapUIAction
                         continue;
                     }
 
-                    for (RequestParamGUI paramGUI : requestParamGUIList) {
-                        if (paramGUI.requestParamNameTextField.getText().isEmpty()) {
+                    for (RequestParamInputsPanelGUI paramGUI : requestParamInputsPanelGUIList) {
+                        if (paramGUI.getRequestParamNameTextField().getText().isEmpty()) {
                             continue;
                         }
 
                         RestParamsPropertyHolder param = requestCheckBox.getRestRequest().getParams();
                         RestParamProperty newParamProp = param.addProperty(
-                                paramGUI.requestParamNameTextField.getText());
-                        newParamProp.setValue(paramGUI.requestParamValueTextField.getText());
+                                paramGUI.getRequestParamNameTextField().getText());
+                        newParamProp.setValue(paramGUI.getRequestParamValueTextField().getText());
                         newParamProp.setStyle((RestParamsPropertyHolder.ParameterStyle)
-                                paramGUI.requestParamStyleComboBox.getSelectedItem());
+                                paramGUI.getRequestParamStyleComboBox().getSelectedItem());
                     }
                 }
             }
@@ -116,12 +119,12 @@ public class AddRequestParameters extends AbstractSoapUIAction
         addRequestParamButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JButton addReqParamButton = buildAddRequestParamInputsButtonGUI();
-                RequestParamGUI requestParamGUI = new RequestParamGUI();
+                RequestParamInputsPanelGUI requestParamInputsPanelGUI = new RequestParamInputsPanelGUI();
 
-                requestParamGUIList.add(requestParamGUI);
+                requestParamInputsPanelGUIList.add(requestParamInputsPanelGUI);
                 addReqParamButton.addActionListener(this);
 
-                requestParamsPanel.add(buildRequestParamPanelGUI(addReqParamButton, requestParamGUI));
+                requestParamsPanel.add(buildRequestParamPanelGUI(addReqParamButton, requestParamInputsPanelGUI));
                 requestParamsPanel.revalidate();
             }
         });
@@ -203,6 +206,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
         requestParamsPanel.setLayout(new BoxLayout(requestParamsPanel, BoxLayout.Y_AXIS));
 
         //Scroll panel settings from list of request checkboxes
+        requestCheckBoxesScrollPane.setBorder((BorderFactory.createTitledBorder("List of Requests")));
         requestCheckBoxesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         requestCheckBoxesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
@@ -216,10 +220,18 @@ public class AddRequestParameters extends AbstractSoapUIAction
         okCancelButtonsPanel.add(okButton);
         okCancelButtonsPanel.add(cancelButton);
 
-        comBoxesPanel.add(projectComboBox);
-        comBoxesPanel.add(serviceComboBox);
+        projectComboBoxPanel.setPreferredSize(new Dimension(500, 50));
+        projectComboBoxPanel.add(new JLabel("Select Project"));
+        projectComboBoxPanel.add(projectComboBox);
 
-        requestParamsPanel.add(buildRequestParamPanelGUI(addRequestParamButton, requestParamGUI));
+        serviceComboBoxPanel.setPreferredSize(new Dimension(500, 50));
+        serviceComboBoxPanel.add(new JLabel("Select Service"));
+        serviceComboBoxPanel.add(serviceComboBox);
+
+        comBoxesPanel.add(projectComboBoxPanel);
+        comBoxesPanel.add(serviceComboBoxPanel);
+
+        requestParamsPanel.add(buildRequestParamPanelGUI(addRequestParamButton, requestParamInputsPanelGUI));
 
         globalPanel.add(comBoxesPanel);
         globalPanel.add(requestCheckBoxesScrollPane);
@@ -227,6 +239,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
         globalPanel.add(requestParamsPanel);
         globalPanel.add(okCancelButtonsPanel);
 
+        jDialog.setTitle("Add Request Parameters");
         jDialog.add(globalPanel);
 
         UISupport.showDialog(jDialog);
@@ -282,16 +295,6 @@ public class AddRequestParameters extends AbstractSoapUIAction
         requestCheckBoxesPanel.revalidate();
     }
 
-    private JPanel buildRequestParamInputsPanelGUI(RequestParamGUI requestParamGUI) {
-        JPanel requestParamPanel = new JPanel(new FlowLayout());
-
-        requestParamPanel.add(requestParamGUI.requestParamNameTextField);
-        requestParamPanel.add(requestParamGUI.requestParamValueTextField);
-        requestParamPanel.add(requestParamGUI.requestParamStyleComboBox);
-
-        return requestParamPanel;
-    }
-
     private JButton buildAddRequestParamInputsButtonGUI() {
         JButton addRequestParamButton = new JButton();
         try {
@@ -305,9 +308,9 @@ public class AddRequestParameters extends AbstractSoapUIAction
         return addRequestParamButton;
     }
 
-    private JPanel buildRequestParamPanelGUI(JButton addRequestParamButton, RequestParamGUI requestParamGUI) {
+    private JPanel buildRequestParamPanelGUI(JButton addRequestParamButton, RequestParamInputsPanelGUI requestParamInputsPanelGUI) {
         JPanel newRequestParamPanel = new JPanel();
-        newRequestParamPanel.add(buildRequestParamInputsPanelGUI(requestParamGUI));
+        newRequestParamPanel.add(requestParamInputsPanelGUI.getRequestParamInputsPanel());
         newRequestParamPanel.add(addRequestParamButton);
 
         return newRequestParamPanel;
@@ -394,10 +397,14 @@ public class AddRequestParameters extends AbstractSoapUIAction
         }
     }
 
-    class RequestParamGUI {
-        public JTextField requestParamNameTextField;
-        public JTextField requestParamValueTextField;
-        public JComboBox requestParamStyleComboBox;
+    class RequestParamInputsPanelGUI {
+        private JTextField requestParamNameTextField;
+        private JTextField requestParamValueTextField;
+        private JComboBox requestParamStyleComboBox;
+        private JPanel requestParamNamePanel = new JPanel();
+        private JPanel requestParamValuePanel = new JPanel();
+        private JPanel requestParamStylePanel = new JPanel();
+        private JPanel requestParamInputsPanel = new JPanel();
 
         private JComboBox buildRequestParamStyleComboBoxGUI () {
             JComboBox requestParamStyleComboBox = new JComboBox();
@@ -408,14 +415,41 @@ public class AddRequestParameters extends AbstractSoapUIAction
             return requestParamStyleComboBox;
         }
 
-        public RequestParamGUI () {
-            requestParamNameTextField = new JTextField(10);
-            requestParamStyleComboBox = buildRequestParamStyleComboBoxGUI();
-            requestParamValueTextField = new JTextField(10);
+        public RequestParamInputsPanelGUI() {
+            this.requestParamNameTextField = new JTextField(10);
+            this.requestParamStyleComboBox = buildRequestParamStyleComboBoxGUI();
+            this.requestParamValueTextField = new JTextField(10);
+
+//            this.requestParamNamePanel.setLayout(new BoxLayout(requestParamNamePanel, BoxLayout.Y_AXIS));
+//            this.requestParamValuePanel.setLayout(new BoxLayout(requestParamValuePanel, BoxLayout.Y_AXIS));
+//            this.requestParamStylePanel.setLayout(new BoxLayout(requestParamStylePanel, BoxLayout.Y_AXIS));
+
+            this.requestParamNamePanel.add(new JLabel("Name"));
+            this.requestParamNamePanel.add(this.requestParamNameTextField);
+            this.requestParamValuePanel.add(new JLabel("Value"));
+            this.requestParamValuePanel.add(this.requestParamValueTextField);
+            this.requestParamStylePanel.add(new JLabel("Style"));
+            this.requestParamStylePanel.add(this.requestParamStyleComboBox);
+
+            this.requestParamInputsPanel.add(this.requestParamNamePanel);
+            this.requestParamInputsPanel.add(this.requestParamValuePanel);
+            this.requestParamInputsPanel.add(this.requestParamStylePanel);
         }
 
-        public RequestParamGUI getRequestParamGUI () {
-            return this;
+        public JTextField getRequestParamNameTextField() {
+            return this.requestParamNameTextField;
+        }
+
+        public JTextField getRequestParamValueTextField() {
+            return this.requestParamValueTextField;
+        }
+
+        public JComboBox getRequestParamStyleComboBox() {
+            return this.requestParamStyleComboBox;
+        }
+
+        public JPanel getRequestParamInputsPanel () {
+            return this.requestParamInputsPanel;
         }
     }
 }
