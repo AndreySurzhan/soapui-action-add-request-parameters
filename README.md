@@ -3,9 +3,9 @@ That Plugin/Action should allow you to populate specified parameters in selected
 
 # Installation
 
-1. Install maven
-2. run `mvn package`
-3. Copy ``./target/soapui-action-add-request-parameters-<VERSION>.jar` file into `soapui/bin/ext` folder
+1. Install [maven](https://maven.apache.org/install.html)
+2. run `mvn package` to build the `jar` file
+3. Copy `./target/soapui-action-add-request-parameters-<VERSION>.jar` file into `soapui/bin/ext` folder
 4. Create xml file `add-request-parameters-actions.xml` with the content
 
     ```

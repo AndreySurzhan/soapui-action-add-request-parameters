@@ -18,6 +18,7 @@ import com.eviware.soapui.support.action.support.AbstractSoapUIAction;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,6 +43,10 @@ public class AddRequestParameters extends AbstractSoapUIAction
 
         final JComboBox projectComboBox = new JComboBox();
         final JComboBox serviceComboBox = new JComboBox();
+
+        final JButton selectAllButton = new JButton("Select All");
+        final JButton unselectAllButton = new JButton("Unselect All");
+        final JPanel selectUnselectAllButtonsPanel = new JPanel();
 
         final JPanel requestParamsPanel = new JPanel(new FlowLayout());
         final JButton addRequestParamButton = buildAddRequestParamInputsButtonGUI();
@@ -155,6 +160,40 @@ public class AddRequestParameters extends AbstractSoapUIAction
             }
         });
 
+        selectAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (requestCheckBoxes.size() == 0) {
+                    return;
+                }
+
+                for (RequestCheckBox requestCheckBox : requestCheckBoxes) {
+                    if (!requestCheckBox.getCheckBox().isSelected()) {
+                        requestCheckBox.getCheckBox().setSelected(true);
+                    }
+                }
+
+                requestCheckBoxesPanel.revalidate();
+            }
+        });
+
+        unselectAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (requestCheckBoxes.size() == 0) {
+                    return;
+                }
+
+                for (RequestCheckBox requestCheckBox : requestCheckBoxes) {
+                    if (requestCheckBox.getCheckBox().isSelected()) {
+                        requestCheckBox.getCheckBox().setSelected(false);
+                    }
+                }
+
+                requestCheckBoxesPanel.revalidate();
+            }
+        });
+
         ///LAYOUT SETTINGS
         jDialog.setSize(800, 600);
 
@@ -167,6 +206,13 @@ public class AddRequestParameters extends AbstractSoapUIAction
         requestCheckBoxesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         requestCheckBoxesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
+        Border emptyBorder = BorderFactory.createEmptyBorder();
+        selectAllButton.setBorder(emptyBorder);
+        unselectAllButton.setBorder(emptyBorder);
+
+        selectUnselectAllButtonsPanel.add(selectAllButton);
+        selectUnselectAllButtonsPanel.add(unselectAllButton);
+
         okCancelButtonsPanel.add(okButton);
         okCancelButtonsPanel.add(cancelButton);
 
@@ -177,6 +223,7 @@ public class AddRequestParameters extends AbstractSoapUIAction
 
         globalPanel.add(comBoxesPanel);
         globalPanel.add(requestCheckBoxesScrollPane);
+        globalPanel.add(selectUnselectAllButtonsPanel);
         globalPanel.add(requestParamsPanel);
         globalPanel.add(okCancelButtonsPanel);
 
