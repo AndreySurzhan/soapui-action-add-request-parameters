@@ -1,7 +1,7 @@
 # Description
 That Plugin/Action should allow you to populate specified parameters in selected requests across selected soapUI project
 
-![Alt text](/src/main/resources/images/screenShot.png?raw=true "Add Request Parameters"")
+![Alt text](/src/main/resources/images/screenShot.png?raw=true "Add Request Parameters")
 
 # Installation
 
